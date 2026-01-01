@@ -1,0 +1,7 @@
+Jan 01, 2026:
+Whirlwind Barb build
+
+Dec 24, 2025:
+\internal\run\diablo.go
+line 162: change monster clear range to 20
+line 262: change timmeout from 20 to 10 secs to avoid waiting too long for Lord De Seis to spawn
