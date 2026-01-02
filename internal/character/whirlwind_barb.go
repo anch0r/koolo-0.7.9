@@ -33,16 +33,6 @@ func (s *WhirlwindBarb) CheckKeyBindings() []skill.ID {
 	requireKeybindings := []skill.ID{skill.BattleCommand, skill.BattleOrders, skill.Shout, skill.Whirlwind, skill.FindItem, skill.Berserk}
 	missingKeybindings := []skill.ID{}
 
-	hasHowl := s.Data.PlayerUnit.Skills[skill.Howl].Level > 0
-	if s.CharacterCfg.Character.WhirlwindBarb.UseHowl && hasHowl {
-		requireKeybindings = append(requireKeybindings, skill.Howl)
-	}
-
-	hasBattleCry := s.Data.PlayerUnit.Skills[skill.BattleCry].Level > 0
-	if s.CharacterCfg.Character.WhirlwindBarb.UseBattleCry && hasBattleCry {
-		requireKeybindings = append(requireKeybindings, skill.BattleCry)
-	}
-
 	for _, cskill := range requireKeybindings {
 		if _, found := s.Data.KeyBindings.KeyBindingForSkill(cskill); !found {
 			missingKeybindings = append(missingKeybindings, cskill)
@@ -216,54 +206,8 @@ func (s *WhirlwindBarb) FindItemOnNearbyCorpses(maxRange int) {
 		s.horkedCorpses = make(map[data.UnitID]bool)
 	}
 
-	originalSlot := ctx.Data.ActiveWeaponSlot
-	swapped := false
-
-	keepHorkSlot := func() {
-		if !ctx.CharacterCfg.Character.WhirlwindBarb.FindItemSwitch {
-			return
-		}
-		ctx.RefreshGameData()
-		if ctx.Data.ActiveWeaponSlot != 1 {
-			s.Logger.Debug("switch hork slot", "current", ctx.Data.ActiveWeaponSlot)
-			s.SwapToSlot(1)
-		}
-	}
-
-	// Swap to hork slot if configured
-	if ctx.CharacterCfg.Character.WhirlwindBarb.FindItemSwitch {
-		if s.SwapToSlot(1) {
-			swapped = true
-		} else {
-			// If swap fails, log warning but continue with current weapon
-			s.Logger.Warn("Failed to swap to secondary weapon for horking, continuing with current weapon")
-		}
-	}
-
-	// Use defer to ALWAYS ensure we swap back, even if panic or early return
-	if swapped {
-		defer func() {
-			if !s.SwapToSlot(originalSlot) {
-				s.Logger.Error("CRITICAL: Failed to swap back to original weapon slot",
-					"original", originalSlot,
-					"current", ctx.Data.ActiveWeaponSlot)
-				// Force multiple swap attempts as last resort
-				for i := 0; i < 10; i++ {
-					ctx.HID.PressKey('W')
-					time.Sleep(200 * time.Millisecond)
-					ctx.RefreshGameData()
-					if ctx.Data.ActiveWeaponSlot == originalSlot {
-						s.Logger.Info("Successfully recovered weapon swap after multiple attempts")
-						return
-					}
-				}
-			}
-		}()
-	}
-
 	for _, corpse := range corpses {
 		ctx.PauseIfNotPriority()
-		keepHorkSlot()
 
 		if s.horkedCorpses[corpse.UnitID] {
 			continue
@@ -281,9 +225,6 @@ func (s *WhirlwindBarb) FindItemOnNearbyCorpses(maxRange int) {
 				continue
 			}
 		}
-
-		keepHorkSlot()
-
 		// Make sure Find Item is on right-click
 		if s.Data.PlayerUnit.RightSkill != skill.FindItem {
 			ctx.HID.PressKeyBinding(findItemKey)
@@ -392,15 +333,8 @@ func (s *WhirlwindBarb) horkRange() int {
 	return r
 }
 
-// slot 0 = primary weapon, slot 1 = secondary weapon
-// Improved SwapToSlot with more robust retry logic
 func (s *WhirlwindBarb) SwapToSlot(slot int) bool {
 	ctx := context.Get()
-
-	// If we don't want to switch for find item, just say "no-op"
-	if !ctx.CharacterCfg.Character.WhirlwindBarb.FindItemSwitch {
-		return false
-	}
 
 	// Already on desired slot
 	if ctx.Data.ActiveWeaponSlot == slot {
@@ -447,11 +381,6 @@ func (s *WhirlwindBarb) SwapToSlot(slot int) bool {
 // Alternative: Add a safety check function to call periodically
 func (s *WhirlwindBarb) EnsurePrimaryWeaponEquipped() bool {
 	ctx := context.Get()
-
-	// If not using weapon switch feature, nothing to check
-	if !ctx.CharacterCfg.Character.WhirlwindBarb.FindItemSwitch {
-		return true
-	}
 
 	// If we're on slot 1 (secondary) when we shouldn't be, swap back
 	if ctx.Data.ActiveWeaponSlot == 1 {

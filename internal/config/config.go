@@ -161,14 +161,7 @@ type CharacterCfg struct {
 			HorkMonsterCheckRange       int  `yaml:"hork_monster_check_range"`
 		} `yaml:"berserker_barb"`
 		WhirlwindBarb struct {
-			FindItemSwitch              bool `yaml:"find_item_switch"`
 			SkipPotionPickupInTravincal bool `yaml:"skip_potion_pickup_in_travincal"`
-			UseHowl                     bool `yaml:"use_howl"`
-			HowlCooldown                int  `yaml:"howl_cooldown"`
-			HowlMinMonsters             int  `yaml:"howl_min_monsters"`
-			UseBattleCry                bool `yaml:"use_battlecry"`
-			BattleCryCooldown           int  `yaml:"battlecry_cooldown"`
-			BattleCryMinMonsters        int  `yaml:"battlecry_min_monsters"`
 			HorkNormalMonsters          bool `yaml:"hork_normal_monsters"`
 			HorkMonsterCheckRange       int  `yaml:"hork_monster_check_range"`
 		} `yaml:"whirlwind_barb"`
